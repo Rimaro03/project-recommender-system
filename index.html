@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Music Recommender</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { spotify: '#1DB954', dark: '#121212', card: '#181818', hover: '#282828' }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-dark text-white font-sans antialiased p-8">
+
+    <div class="max-w-3xl mx-auto">
+        <h1 class="text-4xl font-bold mb-2">NeuralDJ <span class="text-spotify">AI</span></h1>
+        <p class="text-gray-400 mb-8">Session-based Next-Track Prediction</p>
+
+        <!-- Current Session Queue -->
+        <div class="bg-card p-6 rounded-lg mb-6 shadow-lg border border-gray-800">
+            <h2 class="text-xl font-semibold mb-4 border-b border-gray-700 pb-2">Current Listening Session</h2>
+            
+            <!-- Hardcoded for demo purposes. In a real app, you'd build a search bar here to lookup tracks from idx2track -->
+            <ul id="session-list" class="space-y-2 mb-6">
+                <li class="bg-hover p-3 rounded flex justify-between items-center" data-id="105">
+                    <span>1. Karma Police - Radiohead</span>
+                </li>
+                <li class="bg-hover p-3 rounded flex justify-between items-center" data-id="842">
+                    <span>2. Paranoid Android - Radiohead</span>
+                </li>
+            </ul>
+
+            <button onclick="getRecommendations()" class="w-full bg-spotify hover:bg-green-400 text-black font-bold py-3 px-4 rounded-full transition duration-300">
+                Predict Next Song
+            </button>
+        </div>
+
+        <!-- Recommendations Area -->
+        <div id="results-container" class="hidden">
+            <h2 class="text-2xl font-bold mb-4">Up Next</h2>
+            <div id="recommendations-list" class="space-y-3">
+                <!-- JS will inject results here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function getRecommendations() {
+            // 1. Gather the IDs from the current session UI
+            const sessionItems = document.querySelectorAll('#session-list li');
+            const sessionTracks = Array.from(sessionItems).map(li => parseInt(li.getAttribute('data-id')));
+
+            // 2. Send to FastAPI backend
+            try {
+                const response = await fetch('http://127.0.0.up:8000/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_tracks: sessionTracks })
+                });
+                
+                const data = await response.json();
+                
+                // 3. Render Results
+                const list = document.getElementById('recommendations-list');
+                list.innerHTML = ''; // Clear previous
+                
+                data.recommendations.forEach(track => {
+                    const el = document.createElement('div');
+                    el.className = "bg-card hover:bg-hover p-4 rounded-lg flex items-center border border-gray-800 transition";
+                    el.innerHTML = `
+                        <div class="text-gray-400 w-8 font-bold">${track.rank}</div>
+                        <div class="flex-grow font-medium">${track.name}</div>
+                        <button onclick="addToSession(${track.id}, '${track.name.replace(/'/g, "\\'")}')" class="text-sm text-gray-400 hover:text-white px-3 py-1 rounded-full border border-gray-600 hover:border-white">
+                            Add to Queue
+                        </button>
+                    `;
+                    list.appendChild(el);
+                });
+
+                document.getElementById('results-container').classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Error fetching recommendations:", error);
+                alert("Make sure your Python backend is running!");
+            }
+        }
+
+        // Helper function to allow clicking a recommendation and adding it to the current session
+        function addToSession(id, name) {
+            const list = document.getElementById('session-list');
+            const count = list.children.length + 1;
+            const li = document.createElement('li');
+            li.className = "bg-hover p-3 rounded flex justify-between items-center";
+            li.setAttribute('data-id', id);
+            li.innerHTML = `<span>${count}. ${name}</span>`;
+            list.appendChild(li);
+            
+            // Clear current recommendations
+            document.getElementById('results-container').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
