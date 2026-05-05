@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,6 +17,7 @@
         }
     </script>
 </head>
+
 <body class="bg-dark text-white font-sans antialiased p-8">
 
     <div class="max-w-3xl mx-auto">
@@ -25,7 +27,7 @@
         <!-- Current Session Queue -->
         <div class="bg-card p-6 rounded-lg mb-6 shadow-lg border border-gray-800">
             <h2 class="text-xl font-semibold mb-4 border-b border-gray-700 pb-2">Current Listening Session</h2>
-            
+
             <!-- Hardcoded for demo purposes. In a real app, you'd build a search bar here to lookup tracks from idx2track -->
             <ul id="session-list" class="space-y-2 mb-6">
                 <li class="bg-hover p-3 rounded flex justify-between items-center" data-id="105">
@@ -36,7 +38,8 @@
                 </li>
             </ul>
 
-            <button onclick="getRecommendations()" class="w-full bg-spotify hover:bg-green-400 text-black font-bold py-3 px-4 rounded-full transition duration-300">
+            <button onclick="getRecommendations()"
+                class="w-full bg-spotify hover:bg-green-400 text-black font-bold py-3 px-4 rounded-full transition duration-300">
                 Predict Next Song
             </button>
         </div>
@@ -58,18 +61,18 @@
 
             // 2. Send to FastAPI backend
             try {
-                const response = await fetch('http://127.0.0.up:8000/predict', {
+                const response = await fetch('http://127.0.0.1:8000/predict', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ session_tracks: sessionTracks })
                 });
-                
+
                 const data = await response.json();
-                
+
                 // 3. Render Results
                 const list = document.getElementById('recommendations-list');
                 list.innerHTML = ''; // Clear previous
-                
+
                 data.recommendations.forEach(track => {
                     const el = document.createElement('div');
                     el.className = "bg-card hover:bg-hover p-4 rounded-lg flex items-center border border-gray-800 transition";
@@ -100,10 +103,11 @@
             li.setAttribute('data-id', id);
             li.innerHTML = `<span>${count}. ${name}</span>`;
             list.appendChild(li);
-            
+
             // Clear current recommendations
             document.getElementById('results-container').classList.add('hidden');
         }
     </script>
 </body>
+
 </html>
